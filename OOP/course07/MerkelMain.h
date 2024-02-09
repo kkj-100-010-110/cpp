@@ -19,7 +19,7 @@ private:
     int getUserOption();
     void printHelp();
     void printMarketStats();
-    void enterOffer();
+    void enterAsk();
     void enterBid();
     void printWallet();
     void gotoNextTimeframe();
@@ -28,7 +28,8 @@ private:
 
 private:
     std::string currentTime;
-    OrderBook orderBook{"20200317.csv"};
+    // OrderBook orderBook{"20200317.csv"};
+    OrderBook orderBook{"test.csv"};
     std::vector<OrderBookEntry> orders;
     std::map<int, void(MerkelMain::*)()> menu;
 };

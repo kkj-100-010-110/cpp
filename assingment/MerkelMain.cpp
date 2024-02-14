@@ -1,21 +1,22 @@
 #include "MerkelMain.h"
 #include "CSVReader.h"
+#include <iomanip>
 
 MerkelMain::MerkelMain()
 {
 	menu[1] = &MerkelMain::printHelp;
 	menu[2] = &MerkelMain::printMarketStats;
-	menu[3] = &MerkelMain::enterAsk;
+	menu[3] = &MerkelMain::enterOffer;
 	menu[4] = &MerkelMain::enterBid;
 	menu[5] = &MerkelMain::printWallet;
 	menu[6] = &MerkelMain::gotoNextTimeframe;
+	menu[7] = &MerkelMain::printProductPriceChange;
 }
 
 void MerkelMain::init()
 {
     int input;
 	currentTime = orderBook.getEarliestTime();
-	wallet.insertCurrency("BTC", 10);
     while (true)
     {
         printMenu();
@@ -32,13 +33,15 @@ void MerkelMain::printMenu()
 		// 2 print exchange stats
 		std::cout << "2: Print exchange stats " << std::endl;
 		// 3 make an offer --> what you've got to sell
-		std::cout << "3: Make an ask " << std::endl;
+		std::cout << "3: Make an offer " << std::endl;
 		// 4 make a bid --> what you'd like to buy
 		std::cout << "4: Make a bid " << std::endl;
 		// 5 print wallet
 		std::cout << "5: Print wallet " << std::endl;
 		// 6 continue
 		std::cout << "6: Continue " << std::endl;
+		// 7 change
+		std::cout << "7: Price Change " << std::endl;
 
 		std::cout << "============== " << std::endl;
 
@@ -75,104 +78,68 @@ void MerkelMain::printMarketStats()
 	// std::cout << "OrderBook asks: " << asks << " bids: " << bids << std::endl;
 }
 
-void MerkelMain::enterAsk()
+void MerkelMain::enterOffer()
 {
-	std::cout << "Make an ask - enter the amount : product,price,amount, eg ETH/BTC,200,0.5" << std::endl;
-	std::string input;
-	// std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::getline(std::cin, input);
-	std::vector<std::string> tokens = CSVReader::tokenise(input, ',');
-	if (tokens.size() != 3)
-	{
-		std::cout << "MerkelMain::enterAsk Bad input: " << input << std::endl;
-	}
-	else
-	{
-		try
-		{
-			OrderBookEntry obe = CSVReader::stringsToOBE(tokens[1], tokens[2], currentTime, tokens[0], OrderBookType::ask);
-			if (wallet.canFulfillOrder(obe))
-			{
-				std::cout << "Wallet looks good. " << std::endl;
-				orderBook.insertOrder(obe);
-			}
-			else
-			{
-				std::cout << "Wallet has insufficient funds. " << std::endl;
-			}
-		}
-		catch (const std::exception& e)
-		{
-			std::cout << "MerkelMain::enterAsk Bad input" << std::endl;
-		}
-	}
+	std::cout << "Make an offer - enter the amount " << std::endl;
 }
 
 void MerkelMain::enterBid()
 {
-	std::cout << "Make an bid - enter the amount : product,price,amount, eg ETH/BTC,200,0.5" << std::endl;
-	std::string input;
-	// std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-	std::getline(std::cin, input);
-	std::vector<std::string> tokens = CSVReader::tokenise(input, ',');
-	if (tokens.size() != 3)
-	{
-		std::cout << "MerkelMain::enterBid Bad input: " << input << std::endl;
-	}
-	else
-	{
-		try
-		{
-			OrderBookEntry obe = CSVReader::stringsToOBE(tokens[1], tokens[2], currentTime, tokens[0], OrderBookType::bid);
-			if (wallet.canFulfillOrder(obe))
-			{
-				std::cout << "Wallet looks good. " << std::endl;
-				orderBook.insertOrder(obe);
-			}
-			else
-			{
-				std::cout << "Wallet has insufficient funds. " << std::endl;
-			}
-		}
-		catch (const std::exception& e)
-		{
-			std::cout << "MerkelMain::enterBid Bad input" << std::endl;
-		}
-	}
+	std::cout << "Make a bid - enter the amount" << std::endl;
 }
 
 void MerkelMain::printWallet()
 {
-	std::cout << wallet.toString() << std::endl;
+	std::cout << "Your wallet is empty. " << std::endl;
 }
 
 void MerkelMain::gotoNextTimeframe()
 {
 	std::cout << "Going to next time frame. " << std::endl;
-	std::vector<OrderBookEntry> sales = orderBook.matchAsksToBids("ETH/BTC", currentTime);
-	std::cout << "Sales: " << sales.size() << std::endl;
-	for (OrderBookEntry& sale : sales)
-	{
-		std::cout << "Sale amount: " << sale.price << " amount " << sale.amount << std::endl;
-	}
 	currentTime = orderBook.getNextTime(currentTime);
+}
+
+void MerkelMain::printProductPriceChange()
+{
+	std::cout << std::endl;
+	std::cout << std::setw(10) << "Product" << std::setw(6) << "TYPE" << std::setw(15) << "Price" << std::setw(10) << "Change" << std::endl;
+	for (std::string const& p : orderBook.getKnownProducts())
+	{
+		std::cout << std::setw(10) << p;
+		double newPrice = orderBook.getCurrentPrice(OrderBookType::ask, p, currentTime);
+		double oldPrice = orderBook.getCurrentPrice(OrderBookType::ask, p, orderBook.getPreviousTime(currentTime));
+		std::cout << std::setw(6) << "ASK";
+		std::cout << std::setw(15) << newPrice;
+		std::cout << std::setw(10);
+		std::cout << std::fixed;
+		std::cout.precision(2);
+		std::cout << OrderBook::getChange(newPrice, oldPrice) << "%";
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+	std::cout << std::setw(10) << "Product" << std::setw(6) << "TYPE" << std::setw(15) << "Price" << std::setw(10) << "Change" << std::endl;
+	for (std::string const& p : orderBook.getKnownProducts())
+	{
+		std::cout << std::setw(10) << p;
+		double newPrice = orderBook.getCurrentPrice(OrderBookType::bid, p, currentTime);
+		double oldPrice = orderBook.getCurrentPrice(OrderBookType::bid, p, orderBook.getPreviousTime(currentTime));
+		std::cout << std::setw(6) << "BID";
+		std::cout << std::setw(15) << newPrice;
+		std::cout << std::setw(10);
+		std::cout << std::fixed;
+		std::cout.precision(2);
+		std::cout << OrderBook::getChange(newPrice, oldPrice) << "%";
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
 }
 
 int MerkelMain::getUserOption()
 {
-		int userOption = 0;
-		std::string line;
-		std::cout << "Type in 1-6 " << std::endl;
-		std::getline(std::cin, line);
-		try
-		{
-			userOption = stoi(line);
-		}
-		catch(const std::exception& e)
-		{
-		}
-		
-		// std::cin >> userOption;
+		int userOption;
+
+		std::cout << "Type in 1-7 " << std::endl;
+		std::cin >> userOption;
 		std::cout << "You chose: " << userOption << std::endl;
 
 		return userOption;
@@ -194,7 +161,7 @@ void MerkelMain::processUserOption(int userOption)
 		}
 		if (userOption == 3) // bad input
 		{
-			enterAsk();
+			enterOffer();
 		}
 		if (userOption == 4) // bad input
 		{
@@ -212,9 +179,9 @@ void MerkelMain::processUserOption(int userOption)
 
 void MerkelMain::processUserOptionMap(int userOption)
 {
-		if (userOption == 0 || userOption > 6) // bad input
+		if (userOption == 0 || userOption > 7) // bad input
 		{
-			std::cout << "Invalid choice. Choose 1-6" << std::endl;
+			std::cout << "Invalid choice. Choose 1-7" << std::endl;
 		}
 		else
 		{

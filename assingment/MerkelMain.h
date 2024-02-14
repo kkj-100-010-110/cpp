@@ -2,8 +2,6 @@
 
 #include "OrderBookEntry.h"
 #include "OrderBook.h"
-#include "Wallet.h"
-
 #include <vector>
 #include <map>
 #include <iostream>
@@ -21,18 +19,17 @@ private:
     int getUserOption();
     void printHelp();
     void printMarketStats();
-    void enterAsk();
+    void enterOffer();
     void enterBid();
     void printWallet();
     void gotoNextTimeframe();
+    void printProductPriceChange();
     void processUserOption(int userOption);
     void processUserOptionMap(int userOption);
 
 private:
     std::string currentTime;
     OrderBook orderBook{"20200317.csv"};
-    // OrderBook orderBook{"test.csv"};
     std::vector<OrderBookEntry> orders;
     std::map<int, void(MerkelMain::*)()> menu;
-    Wallet wallet;
 };

@@ -3,7 +3,6 @@
 #include <vector>
 #include "OrderBookEntry.h"
 #include "MerkelMain.h"
-#include "Wallet.h"
 
 double computeAveragePrice(std::vector<OrderBookEntry> &entries);
 double computeLowPrice(std::vector<OrderBookEntry> &entries);

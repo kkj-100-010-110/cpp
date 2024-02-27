@@ -44,6 +44,14 @@ public:
      */
     bool canFulfillOrder(const OrderBookEntry& order);
     /**
+     * @brief Update contents of the wallet
+     * 
+     * assumes the order was made by the owner of the wallet
+     * 
+     * @param sale 
+     */
+    void processSale(OrderBookEntry& sale);
+    /**
      * @brief generate a string representation of the wallet
      * 
      * @return std::string 
